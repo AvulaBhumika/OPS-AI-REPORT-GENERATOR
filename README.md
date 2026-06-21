@@ -345,5 +345,5 @@ MIT License — free to use, modify, and distribute. Attribution appreciated.
 <div align="center">
   <sub>Built for operations and analytics teams at content and social media platforms.</sub><br/>
   <sub>⭐ Star this repo if it helped you — it supports continued development.</sub>
+   <sub> AB . </sub>
 </div>
-----------------------------------------------------------------------------AB-------------------------------------------------------------------------------
