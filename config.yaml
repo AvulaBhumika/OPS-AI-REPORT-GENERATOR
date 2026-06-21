@@ -1,0 +1,105 @@
+# ─────────────────────────────────────────────────────────────
+# Ops Report Generator — Configuration
+# Copy this file and fill in your values.
+# Sensitive values (API keys, passwords) go in .env — never here.
+# ─────────────────────────────────────────────────────────────
+
+team_name: "AB Ops"   # Appears in report headers and email subject
+
+# ── Data Source ───────────────────────────────────────────────
+# Set type to: csv | gsheet | sql
+data_source:
+  type: csv                  # Change to gsheet or sql as needed
+
+  csv:
+    filepath: data/sample.csv   # Path to your CSV file
+
+  gsheet:
+    sheet_id: "YOUR_GOOGLE_SHEET_ID_HERE"
+    # Sheet ID is in the URL: docs.google.com/spreadsheets/d/SHEET_ID/edit
+    range: "Sheet1!A1:Z500"
+    credentials_path: "config/google_credentials.json"
+    # How to get credentials:
+    # 1. Go to console.cloud.google.com
+    # 2. Create project → Enable Google Sheets API
+    # 3. Create Service Account → Download JSON key
+    # 4. Share your Sheet with the service account email
+
+  sql:
+    # connection_string uses SQLAlchemy format:
+    # PostgreSQL: postgresql://user:password@host:5432/dbname
+    # MySQL:      mysql+pymysql://user:password@host:3306/dbname
+    connection_string: "${DATABASE_URL}"   # Set DATABASE_URL in .env
+    query: |
+      SELECT
+        date,
+        total_posts,
+        active_users,
+        flagged_content,
+        moderation_actions,
+        creator_signups
+      FROM daily_ops_metrics
+      WHERE date >= CURRENT_DATE - INTERVAL '30 days'
+      ORDER BY date ASC
+
+
+# ── Report Settings ───────────────────────────────────────────
+report:
+  type: "Daily"              # Daily | Weekly | Monthly — appears in report title
+
+  team_context: >
+    AB Operations team. We track content moderation volume,
+    creator activity, user engagement, and platform safety metrics.
+    Our KPIs are moderation backlog, creator retention, and flagged content rate.
+  # Be specific — the LLM uses this to write relevant insights
+
+  numeric_columns:           # Columns to analyze (leave empty [] to auto-detect)
+    - total_posts
+    - active_users
+    - flagged_content
+    - moderation_actions
+    - creator_signups
+    - appeal_volume
+
+  date_column: date          # Column containing dates (for report period display)
+
+  anomaly_z_threshold: 2.0   # Flag values > 2 standard deviations from mean
+  # Lower = more sensitive (more alerts). Raise to 2.5 for less noise.
+
+  output_dir: reports        # Local folder where .txt reports are saved
+
+
+# ── Schedule ──────────────────────────────────────────────────
+schedule:
+  frequency: daily           # daily | weekly | hourly
+  time: "08:30"              # 24h format, IST (server timezone)
+  day: monday                # Only used when frequency: weekly
+
+
+# ── Delivery ──────────────────────────────────────────────────
+delivery:
+
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    # How to get webhook:
+    # 1. Go to api.slack.com/apps → Create New App → Incoming Webhooks
+    # 2. Activate → Add to Workspace → Copy Webhook URL
+    # 3. Add SLACK_WEBHOOK_URL=https://hooks.slack.com/... to .env
+
+  email:
+    enabled: false           # Set true to also send email
+    recipients:
+      - "your-manager@company.com"
+      - "ops-team@company.com"
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 465
+    smtp_user: "${SMTP_USER}"         # Set in .env
+    smtp_password: "${SMTP_PASSWORD}" # Set in .env (use App Password for Gmail)
+    # Gmail App Password: myaccount.google.com → Security → App Passwords
+
+
+# ── Groq LLM ──────────────────────────────────────────────────
+groq:
+  api_key: "${GROQ_API_KEY}"   # Set GROQ_API_KEY in .env
+  # Get free key: console.groq.com
